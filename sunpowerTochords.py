@@ -5,6 +5,9 @@ import logging
 import os
 import datetime
 import zoneinfo
+import json
+import pychords.tochords as tochords
+import time
 
 
 def stringToUnixTimestamp(datetimeString, year, tzinfo):
@@ -50,26 +53,27 @@ def stringToUnixTimestamp(datetimeString, year, tzinfo):
     return 0
 
 
-def readSunpowerReport(filepath, year=datetime.datetime.now().year, tzinfo=zoneinfo.ZoneInfo('US/Pacific')):
+def readSunpowerReport(data_filepath, year=datetime.datetime.now().year, tzinfo=zoneinfo.ZoneInfo('US/Pacific')):
     """
     Read a sunpower xlsx file into a pandas data frame and convert timestamps into unix timestamps.
     """
+
     # Make sure the file exists
-    if os.path.exists(filepath) == False:
-        logging.error(f"{filepath} does not exist.")
+    if os.path.exists(data_filepath) == False:
+        logging.error(f"{data_filepath} does not exist.")
         return None
 
     # Parse the file
-    logging.info(f"Parsing {filepath}")
-    dataframe = pandas.read_excel(filepath)
+    logging.info(f"Parsing {data_filepath}")
+    dataframe = pandas.read_excel(data_filepath)
     if dataframe is None:
-        logging.error(f"Failed to parse {filepath}")
+        logging.error(f"Failed to parse {data_filepath}")
         return None
 
     # Convert period to a unix timestamp
     if dataframe["Period"] is None:
         logging.error(
-            f"{filepath} is does not contain a Period column, can not parse")
+            f"{data_filepath} is does not contain a Period column, can not parse")
         return None
     dataframe["Unix Timestamp"] = dataframe["Period"].apply(
         stringToUnixTimestamp, args=(year, tzinfo,))
@@ -77,14 +81,70 @@ def readSunpowerReport(filepath, year=datetime.datetime.now().year, tzinfo=zonei
     return dataframe
 
 
-def main(filepath):
-    # Parse sunpower xlsx file
-    dataframe = readSunpowerReport(filepath)
-    if dataframe is None:
-        logging.error(f"Failed to parse {filepath}")
-        sys.exit(-1)
+def handleFile(config, file):
+    """
+    Handle a sunpower xlsx report file and send to chords.
+    """
 
-    logging.info("Data is:\n" + str(dataframe))
+    # Parse the sunpower xlsx into a dataframe
+    dataframe = readSunpowerReport(file)
+    if dataframe is None:
+        logging.error(f"Failed to parse {file}")
+        sys.exit(-1)
+    logging.debug("Data is:\n" + str(dataframe))
+    logging.debug("Headers are:\n" + str(list(dataframe.columns)))
+
+    # Loop through each column and see if it is a known variable
+    for (col_name, col_data) in dataframe.iteritems():
+        for var in config["variables"]:
+            if col_name == var["column_name"]:
+                timestamps = dataframe["Unix Timestamp"]
+                sendData(config, var["short_name"], timestamps, col_data)
+
+
+def sendData(config, short_name, timestamps, data):
+    """
+    Send sunpower data to chords. Takes two columns: unix timestamp and the data itself.
+    """
+
+    # Build and send the URI
+    for timestamp, val in zip(timestamps, data):
+        chords_record = {}
+        chords_record["inst_id"] = config["instrument_id"]
+        chords_record["api_email"] = config["api_email"]
+        chords_record["api_key"] = config["api_key"]
+        chords_record["vars"] = {}
+        chords_record["vars"]["at"] = int(timestamp)
+        chords_record["vars"][short_name] = val
+        uri = tochords.buildURI(config["chords_host"], chords_record)
+        logging.info(f"Submitting: {uri}")
+        max_queue_length = 10*60*24
+        tochords.submitURI(uri, max_queue_length)
+        time.sleep(0.2)
+
+
+def main(files, config_file):
+
+    # Load configuration
+    logging.info(f"Starting SunPower to Chords with {config_file}")
+    config = json.loads(open(config_file).read())
+
+    # Startup chords sender
+    tochords.startSender()
+
+    # Parse each sunpower xlsx file
+    for file in files:
+        logging.info(f"Handling: {file}")
+        handleFile(config, file)
+
+    # Wait for all data to be sent
+    while True:
+        t = time.localtime()
+        num_remaining = tochords.waiting()
+        logging.info(f"Queue length: {num_remaining}")
+        time.sleep(1)
+        if num_remaining == 0:
+            break
 
 
 if __name__ == '__main__':
@@ -92,7 +152,9 @@ if __name__ == '__main__':
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "filepath", help="Path to the sunpower xlsx report to parse.")
+        '-f', '--files', help='The files to compare.', required=True, nargs='+')
+    parser.add_argument(
+        "-c", "--config", help="Path to json configuration file to use.", required=True)
     parser.add_argument(
         "--debug", help="Enable debug logging",
         action="store_true")
@@ -107,4 +169,4 @@ if __name__ == '__main__':
     logging.debug("Debug logging enabled")
 
     # Run main
-    main(args.filepath)
+    main(args.files, args.config)
