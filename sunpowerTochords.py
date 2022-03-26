@@ -139,7 +139,6 @@ def main(files, config_file):
 
     # Wait for all data to be sent
     while True:
-        t = time.localtime()
         num_remaining = tochords.waiting()
         logging.info(f"Queue length: {num_remaining}")
         time.sleep(1)
