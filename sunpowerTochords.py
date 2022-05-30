@@ -44,11 +44,8 @@ def stringToUnixTimestamp(datetimeString, year, tzinfo):
         dt = startdt + ((enddt - startdt) / 2)
         return dt.timestamp()
     except Exception as e:
-        print(e)
-        pass
-
-    logging.error(f"Failed to parse {datetimeString}")
-    return 0
+        logging.error(f"Failed to parse {datetimeString}")
+        raise e
 
 
 def readSunpowerReport(data_filepath, year=datetime.datetime.now().year, tzinfo=zoneinfo.ZoneInfo('US/Pacific')):
