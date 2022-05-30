@@ -30,11 +30,9 @@ def stringToUnixTimestamp(datetimeString, year, tzinfo):
         start = items[0] + items[1].strip()
         end = items[0] + items[2].strip()
 
-        # Convert start/end to datetime
-        startdt = datetime.datetime.strptime(start, "%A, %m/%d %I:%M%p")
-        enddt = datetime.datetime.strptime(end, "%A, %m/%d %I:%M%p")
-        startdt = startdt.replace(year=year)
-        enddt = enddt.replace(year=year)
+        # Convert start/end to datetime (old files are missing year...)
+        startdt = datetime.datetime.strptime(start, "%A, %m/%d/%Y %I:%M%p")
+        enddt = datetime.datetime.strptime(end, "%A, %m/%d/%Y %I:%M%p")
         startdt = startdt.replace(tzinfo=tzinfo)
         enddt = enddt.replace(tzinfo=tzinfo)
 
