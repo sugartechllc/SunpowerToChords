@@ -23,7 +23,7 @@ def stringToUnixTimestamp(datetimeString, year, tzinfo):
     except Exception as e:
         pass
 
-    # Next try to parse in Sunpower Datetime format (Saturday, 2/12 - 7:00am - 8:00am for example)
+    # Next try to parse in Sunpower Datetime format (Saturday, 2/12/2022 - 7:00am - 8:00am for example)
     try:
         # Split out end and startdt times
         items = datetimeString.split("-")
