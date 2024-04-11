@@ -90,7 +90,7 @@ def handleFile(config, file):
     logging.debug("Headers are:\n" + str(list(dataframe.columns)))
 
     # Loop through each column and see if it is a known variable
-    for (col_name, col_data) in dataframe.iteritems():
+    for (col_name, col_data) in dataframe.items():
         for var in config["variables"]:
             if col_name == var["column_name"]:
                 timestamps = dataframe["Unix Timestamp"]
