@@ -1,0 +1,16 @@
+{
+    "chords_host": "wx.myhost.com",
+    "api_email": "myemail@gmail.com",
+    "api_key": "XXXXXXXXXXXXXXXXX",
+    "instrument_id": "12345",
+    "variables": [
+        {
+            "short_name": "solar_prod",
+            "column_name": "Solar Production (kWh)"
+        },
+        {
+            "short_name": "cumulative",
+            "column_name": "Cumulative (kWh)"
+        }
+    ]
+}
