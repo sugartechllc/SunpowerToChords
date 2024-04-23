@@ -113,7 +113,7 @@ def sendData(config, short_name, timestamps, data):
         chords_record["vars"][short_name] = val
         uri = tochords.buildURI(config["chords_host"], chords_record)
         logging.info(f"Submitting: {uri}")
-        max_queue_length = 10*60*24
+        max_queue_length = 31*60*24
         tochords.submitURI(uri, max_queue_length)
         time.sleep(0.2)
 
