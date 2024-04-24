@@ -97,15 +97,28 @@ def handleFile(config, file):
     for i in df.index:
         df_row = df.loc[i]
         vars = {}
-        if ('Period' in df_row):
-            if all((x in df_row) for x in column_names):
-                # Create the time stamp
-                vars['at'] = int(df_row['Unix Timestamp'])
-                # Collect the vars
-                for (short_name, val) in zip(short_names,  [df_row[x] for x in column_names]):
-                    vars[short_name] = val
-                # Send to CHORDS
-                sendData(config=config, vars=vars)
+
+        # Make sure period exists
+        if 'Period' not in df_row:
+            logging.error(f"No period for row {i}")
+            continue
+
+        # Create the time stamp
+        if 'Unix Timestamp' not in df_row:
+            logging.error(f"No unix timestamp for row {i}")
+            continue
+        vars['at'] = int(df_row['Unix Timestamp'])
+
+        # Collect the vars
+        for (short_name, column_name) in zip(short_names, column_names):
+            if column_name not in df_row:
+                logging.debug(f"Skipping unrecognized column {
+                              short_name}, {column_name}")
+                continue
+            vars[short_name] = df_row[column_name]
+
+        # Send to CHORDS
+        sendData(config=config, vars=vars)
 
     return
 
