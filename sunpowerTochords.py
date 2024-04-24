@@ -91,29 +91,29 @@ def handleFile(config, file):
 
     # Create a list of column names and short names
     column_names = [x['column_name'] for x in config['variables']]
-    short_names  = [x['short_name']  for x in config['variables']]
+    short_names = [x['short_name'] for x in config['variables']]
 
     # Loop through all rows in the dataframe
     for i in df.index:
         df_row = df.loc[i]
         vars = {}
         if ('Period' in df_row):
-            if all( (x in df_row) for x in column_names):
+            if all((x in df_row) for x in column_names):
                 # Create the time stamp
                 vars['at'] = int(df_row['Unix Timestamp'])
                 # Collect the vars
-                for (short_name, val) in zip (short_names,  [df_row[x] for x in column_names]):
+                for (short_name, val) in zip(short_names,  [df_row[x] for x in column_names]):
                     vars[short_name] = val
                 # Send to CHORDS
                 sendData(config=config, vars=vars)
 
-    
     return
 
-def sendData(config:dict, vars:dict)->None:
+
+def sendData(config: dict, vars: dict) -> None:
     """
     Send one data record to chords.
-    
+
     vars contains a dictionary of variables, referenced by short name. There must 
     be an 'at' element containing the linux timestamp.
     """
@@ -130,7 +130,8 @@ def sendData(config:dict, vars:dict)->None:
     tochords.submitURI(uri, max_queue_length)
     time.sleep(0.2)
 
-def main(files:list, config_file:str):
+
+def main(files: list, config_file: str):
 
     # Load configuration
     logging.info(f"Starting SunPower to Chords with {config_file}")
