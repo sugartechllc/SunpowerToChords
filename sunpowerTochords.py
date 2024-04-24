@@ -82,43 +82,55 @@ def handleFile(config, file):
     """
 
     # Parse the sunpower xlsx into a dataframe
-    dataframe = readSunpowerReport(file)
-    if dataframe is None:
+    df = readSunpowerReport(file)
+    if df is None:
         logging.error(f"Failed to parse {file}")
         sys.exit(-1)
-    logging.debug("Data is:\n" + str(dataframe))
-    logging.debug("Headers are:\n" + str(list(dataframe.columns)))
+    logging.debug("Data is:\n" + str(df))
+    logging.debug("Headers are:\n" + str(list(df.columns)))
 
-    # Loop through each column and see if it is a known variable
-    for (col_name, col_data) in dataframe.items():
-        for var in config["variables"]:
-            if col_name == var["column_name"]:
-                timestamps = dataframe["Unix Timestamp"]
-                sendData(config, var["short_name"], timestamps, col_data)
+    # Create a list of column names and short names
+    column_names = [x['column_name'] for x in config['variables']]
+    short_names  = [x['short_name']  for x in config['variables']]
 
+    # Loop through all rows in the dataframe
+    for i in df.index:
+        df_row = df.loc[i]
+        vars = {}
+        if ('Period' in df_row):
+            if all( (x in df_row) for x in column_names):
+                # Create the time stamp
+                vars['at'] = int(df_row['Unix Timestamp'])
+                # Collect the vars
+                for (short_name, val) in zip (short_names,  [df_row[x] for x in column_names]):
+                    vars[short_name] = val
+                # Send to CHORDS
+                sendData(config=config, vars=vars)
 
-def sendData(config, short_name, timestamps, data):
+    
+    return
+
+def sendData(config:dict, vars:dict)->None:
     """
-    Send sunpower data to chords. Takes two columns: unix timestamp and the data itself.
+    Send one data record to chords.
+    
+    vars contains a dictionary of variables, referenced by short name. There must 
+    be an 'at' element containing the linux timestamp.
     """
 
     # Build and send the URI
-    for timestamp, val in zip(timestamps, data):
-        chords_record = {}
-        chords_record["inst_id"] = config["instrument_id"]
-        chords_record["api_email"] = config["api_email"]
-        chords_record["api_key"] = config["api_key"]
-        chords_record["vars"] = {}
-        chords_record["vars"]["at"] = int(timestamp)
-        chords_record["vars"][short_name] = val
-        uri = tochords.buildURI(config["chords_host"], chords_record)
-        logging.info(f"Submitting: {uri}")
-        max_queue_length = 31*60*24
-        tochords.submitURI(uri, max_queue_length)
-        time.sleep(0.2)
+    chords_record = {}
+    chords_record["inst_id"] = config["instrument_id"]
+    chords_record["api_email"] = config["api_email"]
+    chords_record["api_key"] = config["api_key"]
+    chords_record["vars"] = vars
+    uri = tochords.buildURI(config["chords_host"], chords_record)
+    logging.info(f"Submitting: {uri}")
+    max_queue_length = 31*60*24
+    tochords.submitURI(uri, max_queue_length)
+    time.sleep(0.2)
 
-
-def main(files, config_file):
+def main(files:list, config_file:str):
 
     # Load configuration
     logging.info(f"Starting SunPower to Chords with {config_file}")
