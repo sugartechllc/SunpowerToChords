@@ -120,8 +120,6 @@ def handleFile(config, file):
         # Send to CHORDS
         sendData(config=config, vars=vars)
 
-    return
-
 
 def sendData(config: dict, vars: dict) -> None:
     """
