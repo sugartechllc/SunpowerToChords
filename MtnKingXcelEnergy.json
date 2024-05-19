@@ -5,44 +5,44 @@
     "instrument_id": "20",
     "variables": [
         {
-            "short_name": Period,
-            "column_name":Period
+            "short_name": "Period",
+            "column_name":"Period"
         },
         {
-            "short_name": total_energy,
-            "column_name":total_energy
+            "short_name": "total_energy",
+            "column_name":"total_energy"
         },
         {
-            "short_name": tot_deliv_by_cust,
-            "column_name":tot_deliv_by_cust
+            "short_name": "tot_deliv_by_cust",
+            "column_name":"tot_deliv_by_cust"
         },
         {
-            "short_name": net_deliv_by_xcel,
-            "column_name":net_deliv_by_xcel
+            "short_name": "net_deliv_by_xcel",
+            "column_name":"net_deliv_by_xcel"
         },
         {
-            "short_name": net_gen_by_cust,
-            "column_name":net_gen_by_cust
+            "short_name": "net_gen_by_cust",
+            "column_name":"net_gen_by_cust"
         },
         {
-            "short_name": demand,
-            "column_name":demand
+            "short_name": "demand",
+            "column_name":"demand"
         },
         {
-            "short_name": billable_demand,
-            "column_name":billable_demand
+            "short_name": "billable_demand",
+            "column_name":"billable_demand"
         },
         {
-            "short_name": xcel_chg_total,
-            "column_name":xcel_chg_total
+            "short_name": "xcel_chg_total",
+            "column_name":"xcel_chg_total"
         },
         {
-            "short_name": solar_bank_bal,
-            "column_name":solar_bank_bal
+            "short_name": "solar_bank_bal",
+            "column_name":"solar_bank_bal"
         },
         {
-            "short_name": solar_bank_xfr,
-            "column_name":solar_bank_xfr
+            "short_name": "solar_bank_xfr",
+            "column_name":"solar_bank_xfr"
         }
     ]
 }
