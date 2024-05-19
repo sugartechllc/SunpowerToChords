@@ -112,8 +112,7 @@ def handleFile(config, file):
         # Collect the vars
         for (short_name, column_name) in zip(short_names, column_names):
             if column_name not in df_row:
-                logging.debug(f"Skipping unrecognized column {
-                              short_name}, {column_name}")
+                logging.debug(f"Skipping unrecognized column {short_name}, {column_name}")
                 continue
             vars[short_name] = df_row[column_name]
 
