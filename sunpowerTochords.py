@@ -76,7 +76,7 @@ def readSunpowerReport(data_filepath, year=datetime.datetime.now().year, tzinfo=
     return dataframe
 
 
-def handleFile(config, file):
+def handleFile(config:dict, file:str, dry_run:bool):
     """
     Handle a sunpower xlsx report file and send to chords.
     """
@@ -114,13 +114,14 @@ def handleFile(config, file):
             if column_name not in df_row:
                 logging.debug(f"Skipping unrecognized column {short_name}, {column_name}")
                 continue
-            vars[short_name] = df_row[column_name]
+            if pandas.notna(df_row[column_name]):
+                vars[short_name] = df_row[column_name]
 
         # Send to CHORDS
-        sendData(config=config, vars=vars)
+        sendData(config=config, vars=vars, dry_run=dry_run)
 
 
-def sendData(config: dict, vars: dict) -> None:
+def sendData(config: dict, vars: dict, dry_run:bool) -> None:
     """
     Send one data record to chords.
 
@@ -136,27 +137,29 @@ def sendData(config: dict, vars: dict) -> None:
     chords_record["vars"] = vars
     uri = tochords.buildURI(config["chords_host"], chords_record)
     logging.info(f"Submitting: {uri}")
-    max_queue_length = 31*60*24
-    tochords.submitURI(uri, max_queue_length)
-    time.sleep(0.2)
+    if not dry_run:
+        max_queue_length = 31*60*24
+        tochords.submitURI(uri, max_queue_length)
+        time.sleep(0.2)
 
 
-def main(files: list, config_file: str):
+def main(files: list, config_file: str, dry_run: bool):
 
     # Load configuration
     logging.info(f"Starting SunPower to Chords with {config_file}")
     config = json.loads(open(config_file).read())
 
     # Startup chords sender
-    tochords.startSender()
+    if not dry_run:
+        tochords.startSender()
 
     # Parse each sunpower xlsx file
     for file in files:
         logging.info(f"Handling: {file}")
-        handleFile(config, file)
+        handleFile(config=config, file=file, dry_run=dry_run)
 
     # Wait for all data to be sent
-    while True:
+    while True and not dry_run:
         num_remaining = tochords.waiting()
         logging.info(f"Queue length: {num_remaining}")
         time.sleep(1)
@@ -173,6 +176,9 @@ if __name__ == '__main__':
     parser.add_argument(
         "-c", "--config", help="Path to json configuration file to use.", required=True)
     parser.add_argument(
+        "--dryrun", help="Dry run: do not send data to CHORDS",
+        action="store_true")
+    parser.add_argument(
         "--debug", help="Enable debug logging",
         action="store_true")
     args = parser.parse_args()
@@ -186,4 +192,4 @@ if __name__ == '__main__':
     logging.debug("Debug logging enabled")
 
     # Run main
-    main(args.files, args.config)
+    main(files=args.files, config_file=args.config, dry_run=args.dryrun)
